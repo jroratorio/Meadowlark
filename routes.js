@@ -23,7 +23,7 @@ module.exports = function( app ) {
 	app.post( '/newsletter', main.newsletterSignup );
 	app.post( '/process' , main.process );
 
-	app.get( '/api/attractions', attractionAPI.getAttraction );
+	app.get( '/api/attraction', attractionAPI.getAttraction );
 	app.get( '/api/attraction/:id', attractionAPI.getAttractionByID );
 	app.post( '/api/attraction', attractionAPI.postAttraction );
 };

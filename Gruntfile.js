@@ -27,7 +27,7 @@ module.exports = function( grunt ) {
 
 		exec: {
 			linkchecker:
-				{ cmd: 'linkchecker https://localhost:3000' }
+				{ cmd: 'linkchecker http://localhost:3000' }
 		},
 
 		less: {
