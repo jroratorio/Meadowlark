@@ -1,5 +1,4 @@
 var assert = require( 'chai' ).assert;
-var http = require( 'http' );
 var rest = require( 'restler' );
 
 suite( 'API tests', function() {
@@ -13,7 +12,7 @@ suite( 'API tests', function() {
 		email: 'test@meadowlarktravel.com',
 	};
 
-	var base = 'http://localhost:3000';
+	var base = 'https://localhost:3000';
 	test( 'should be able to add an attraction', function( done ) {
 		rest.post( base + '/api/attraction', { data: attraction } ).on( 'success', function( data ) {
 			assert.match( data.id, /\w/, 'id must be set' );

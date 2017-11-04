@@ -1,8 +1,6 @@
 var fortune = require( '../lib/fortune.js' );
 
 exports.home = function( req, res ) {
-	// res.cookie( 'monster', 'nom nom' );
-	// res.cookie( 'signed_monster', 'nom nom', { signed: true } );
 	res.render( 'home' );
 };
 
@@ -14,9 +12,7 @@ exports.about = function( req, res ) {
 };
 
 exports.newsletter = function( req, res ) {
-	// we will learn about CSRF later...for now, we just
-	// provide a dummy value
-	res.render( 'newsletter' , { csrf: 'CSRF token goes here' } );
+	res.render( 'newsletter' , { csrf: res.locals._csrfToken } );
 };
 
 exports.headers = function( req,res ) {
@@ -75,9 +71,9 @@ exports.newsletterSignup = function( req, res ) {
 exports.process = function( req, res ) {
 	if( req.xhr || req.accepts( 'json,html' ) === 'json' ) {
 		// if there were an error, we would send { error: 'error description' }
-		res.send( { success: true } );
+                res.send( { success: true } );
 	} else {
 		// if there were an error, we would redirect to an error page
-		res.redirect( 303, '/thank-you' );
+                res.redirect( 303, '/thank-you' );
 	}
 };

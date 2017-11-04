@@ -11,7 +11,7 @@ module.exports = function( app ) {
 	app.get( '/tours/oregon-coast' , tours.oregonCoast );
 	app.get( '/tours/request-group-rate' , tours.requestGroupRate );
 	app.get( '/newsletter' , main.newsletter );
-	app.get( '/headers' , main.headers );
+        app.get( '/headers' , main.headers );
 	app.get( '/nursery-rhyme', rhyme.nurseryRhyme);
 	app.get( '/data/nursery-rhyme', rhyme.dataNurseryRhyme );
 	app.get( '/contest/vacation-photo', vacation.contestVacationPhoto );

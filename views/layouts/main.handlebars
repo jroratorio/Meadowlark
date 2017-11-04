@@ -7,11 +7,13 @@
 		{{#if showTests}}
 			<link rel="stylesheet" href="/vendor/mocha.css">
 		{{/if}}
-		<script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>
+		<script src="https://code.jquery.com/jquery-2.0.2.min.js"></script>
+		<script src="{{static '/js/meadowlark.min.js'}}"></script>
+		<link rel="stylesheet" href="{{static '/css/meadowlark.min.css'}}">
 	</head>
 
 	<body>
-		<header><img src="/img/logo.jpg" alt="Meadowlark Travel Logo"></header>
+		<header><img src="{{static '/img/logo.jpg'}}" alt="Meadowlark Travel Logo"></header>
 		{{#if flash}}
 			<div class="alert alert-dismissible alert-{{flash.type}}">
 				<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;<button>
@@ -20,7 +22,6 @@
 		{{/if}}
 
 		{{{body}}}
-		<script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>
 		{{{_sections.jquery}}}
 
 		{{#if showTests}}

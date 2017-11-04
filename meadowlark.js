@@ -2,7 +2,8 @@ var express = require( 'express' );
 var credentials = require( './credentials.js' );
 var cartValidation = require( './lib/cartValidation.js' );
 var nodemailer = require( 'nodemailer' );
-var http = require( 'http' );
+var https = require( 'https' );
+var fs = require( 'fs' );
 var mongoose = require( 'mongoose' );
 var Vacation = require( './models/vacation.js' );
 var MongoSessionStore = require( 'connect-mongo' )( require( 'express-session' ) );
@@ -10,8 +11,9 @@ var MongoSessionStore = require( 'connect-mongo' )( require( 'express-session' )
 // setting up session using Mongo Session
 var sessionStore = new MongoSessionStore( { url: credentials.mongo.development.connectionString } );
 
-var app = express();
-app.set( 'port' , process.env.PORT || 3000 );
+var app = express(); //setting up express app
+
+app.set( 'port' , process.env.PORT || 3000 ); //setting port for the express app
 
 // setting up mail transport using nodemailer
 var mailTransport = nodemailer.createTransport( {
@@ -41,16 +43,19 @@ switch( app.get( 'env' ) ) {
 
 // set up handlebars view engine
 var handlebars = require( 'express3-handlebars' ).create( {
-			defaultLayout:'main',
-			helpers: {
-				section: function( name, options ) {
-					if( !this._sections )
-						this._sections = {};
-					this._sections[name] = options.fn( this );
-					return null;
-				}
-			}
-		} );
+	defaultLayout:'main',
+	helpers: {
+		section: function( name, options ) {
+			if( !this._sections )
+				this._sections = {};
+			this._sections[name] = options.fn( this );
+			return null;
+		},
+		static: function( name ) {
+			return require( './lib/static.js' ).map( name );
+		}
+	}
+});
 app.engine( 'handlebars' , handlebars.engine );
 app.set( 'view engine' , 'handlebars' );
 
@@ -101,7 +106,7 @@ switch( app.get( 'env' ) ) {
 }
 
 Vacation.find( function( err, vacations ) {
-	if( vacations.length )
+	if( vacations.length ) //if something already exists
 		return;
 	new Vacation({
 		name: 'Hood River Day Trip',
@@ -153,7 +158,7 @@ Vacation.find( function( err, vacations ) {
 
 //setting up Domain handler
 app.use( function( req, res, next ) {
-	// create a domain for this request
+        // create a domain for this request
 	var domain = require( 'domain' ).create();
 	// handle errors on this domain
 	domain.on( 'error', function( err ) {
@@ -198,9 +203,25 @@ app.use( function( req, res, next ) {
 
 app.use( '/api', require( 'cors' )() ); // for rest api
 app.use( express.static( __dirname + '/public' ) ); // middleware to serve static content
-app.use(require( 'body-parser' )()); // middleware to parse request body
-app.use(require( 'cookie-parser' )( credentials.cookieSecret )); // middleware to parse cookies
-app.use(require('express-session')( { store: sessionStore } ) ); // middleware to maintain express session
+app.use( require( 'body-parser' )() ); // middleware to parse request body
+app.use( require( 'cookie-parser' )( credentials.cookieSecret )); // middleware to parse cookies
+app.use( require('express-session')( { store: sessionStore } ) ); // middleware to maintain express session
+
+app.use( require( 'csurf' )() );
+app.use( function( req, res, next ) {
+	res.locals._csrfToken = req.csrfToken();
+        next();
+});
+
+var auth = require( './lib/auth.js' )( app, {
+	providers: credentials.authProviders,
+	successRedirect: '/account',
+	failureRedirect: '/unauthorized',
+});
+// auth.init() links in Passport middleware:
+auth.init();
+// now we can specify our auth routes:
+auth.registerRoutes();
 
 // middleware for set page test result
 app.use( function( req, res, next ) {
@@ -208,14 +229,14 @@ app.use( function( req, res, next ) {
 	next();
 });
 
-app.use(function( req, res, next ) {
+app.use( function( req, res, next ) {
 	if( ! res.locals.partials )
 		res.locals.partials = {};
 	res.locals.partials.weather = getWeatherData();
 	next();
 });
 
-app.use(require('./lib/tourRequiresWaiver.js'));
+app.use( require('./lib/tourRequiresWaiver.js'));
 app.use( cartValidation.checkWaivers );
 app.use( cartValidation.checkGuestCounts );
 
@@ -226,7 +247,7 @@ app.use( function( req, res, next ) {
 	next();
 });
 
-app.use(function(req, res, next){
+app.use( function(req, res, next){
 	// if there's a flash message, transfer
 	// it to the context, then clear it
 	if ( req.session.flash ) {
@@ -244,22 +265,15 @@ app.get( '/set-currency/:currency', function( req, res ) {
 	return res.redirect( 303, '/vacations' );
 });
 
-// app.post( '/process' , function( req, res ) {
-// 	if( req.xhr || req.accepts( 'json,html' ) === 'json' ) {
-// 		// if there were an error, we would send { error: 'error description' }
-// 		res.send( { success: true } );
-// 	} else {
-// 		// if there were an error, we would redirect to an error page
-// 		res.redirect( 303, '/thank-you' );
-// 	}
-// });
-
-
+app.get( '/account', function( req, res ) {
+	if( !req.session.passport.user )
+		return res.redirect( 303, '/unauthorized' );
+	res.render( 'account' );
+});
 
 // 404 catch all handler
 app.use( function( req, res ){
-	res.status( 404 );
-	res.render( '404' );
+	res.status( 404 ).render( '404' );
 });
 
 // custom 500 page
@@ -268,8 +282,14 @@ app.use( function( err, req, res, next ) {
 	res.status( 500 ).render( '500' );
 });
 
+//setting up https
+var options = {
+	key: fs.readFileSync(__dirname + '/ssl/meadowlark.pem'),
+	cert: fs.readFileSync(__dirname + '/ssl/meadowlark.crt'),
+};
+
 function startServer() {
-	http.createServer( app ).listen( app.get( 'port' ), function() {
+	https.createServer( options, app ).listen( app.get( 'port' ), function() {
 		console.log( 'Express started in ' + app.get( 'env' ) + ' mode on http://localhost:' + app.get( 'port' ) + '; press Ctrl-C to terminate.' );
 	});
 }
