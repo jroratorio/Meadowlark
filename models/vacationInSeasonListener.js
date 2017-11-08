@@ -1,8 +1,8 @@
 var mongoose = require( 'mongoose' );
 
 var vacationInSeasonListenerSchema = mongoose.Schema({
-	email: String,
-	skus: [String],
+    email: String,
+    skus: [String],
 });
 
 var VacationInSeasonListener = mongoose.model( 'VacationInSeasonListener', vacationInSeasonListenerSchema );
